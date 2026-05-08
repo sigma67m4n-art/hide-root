@@ -4,14 +4,10 @@ use std::fs;
 use std::io::copy;
 
 #[derive(Deserialize)]
-struct Asset {
-    browser_download_url: String,
-}
+struct Asset { browser_download_url: String }
 
 #[derive(Deserialize)]
-struct Release {
-    assets: Vec<Asset>,
-}
+struct Release { assets: Vec<Asset> }
 
 struct Repo {
     owner: &'static str,
@@ -31,10 +27,8 @@ fn main() {
         Repo { owner: "dpejoh", name: "specter", label: "Specter", index: 0 },
     ];
 
+    let client = reqwest::blocking::Client::new();
     let mut failed = Vec::new();
-    let client = reqwest::blocking::Client::builder()
-        .build()
-        .unwrap();
 
     let install_cmd = if Command::new("ksud").arg("-V").output().is_ok() {
         vec!["ksud", "module", "install"]
@@ -46,40 +40,37 @@ fn main() {
 
     for repo in repos {
         println!("[*] Downloading {}...", repo.label);
-        
-        let api_url = format!("https://api.github.com/repos/{}/{}/releases/latest", repo.owner, repo.name);
-        
-        let res = client.get(&api_url).send();
-        let mut dl_url = None;
 
-        if let Ok(response) = res {
-            if let Ok(release) = response.json::<Release>() {
-                dl_url = release.assets.get(repo.index)
-                    .map(|a| a.browser_download_url.clone())
-                    .or_else(|| release.assets.first().map(|a| a.browser_download_url.clone()));
-            }
-        }
+        let url = format!("https://api.github.com/repos/{}/{}/releases/latest", repo.owner, repo.name);
+        
+        let dl_url = client.get(&url).send()
+            .ok()
+            .and_then(|r| r.json::<Release>().ok())
+            .and_then(|r| r.assets.get(repo.index)
+                .or(r.assets.first())
+                .map(|a| a.browser_download_url.clone()));
 
         if let Some(url) = dl_url {
-            let is_apk = url.ends_with(".apk");
             let tmp_path = format!("/data/local/tmp/{}.tmp", repo.name);
+            let is_apk = url.ends_with(".apk");
 
-            if let Ok(mut response) = client.get(&url).send() {
-                let mut dest = fs::File::create(&tmp_path).unwrap();
-                if copy(&mut response, &mut dest).is_ok() {
-                    println!("[*] Installing {}...", repo.label);
-                    
-                    let status = if is_apk {
-                        Command::new("pm").args(["install", &tmp_path]).status()
-                    } else {
-                        Command::new(install_cmd[0]).args(&install_cmd[1..]).arg(&tmp_path).status()
-                    };
+            if let Ok(mut resp) = client.get(&url).send() {
+                if let Ok(mut f) = fs::File::create(&tmp_path) {
+                    if copy(&mut resp, &mut f).is_ok() {
+                        println!("[*] Installing {}...", repo.label);
+                        
+                        let status = if is_apk {
+                            Command::new("pm").args(["install", &tmp_path]).status()
+                        } else {
+                            Command::new(install_cmd[0]).args(&install_cmd[1..]).arg(&tmp_path).status()
+                        };
 
-                    if status.is_err() || !status.unwrap().success() {
-                        failed.push(repo.label);
+                        if status.map_or(true, |s| !s.success()) {
+                            failed.push(repo.label);
+                        }
+                        let _ = fs::remove_file(&tmp_path);
+                        continue;
                     }
-                    let _ = fs::remove_file(&tmp_path);
-                    continue;
                 }
             }
         }
@@ -87,7 +78,7 @@ fn main() {
     }
 
     if failed.is_empty() {
-        println!("[*] All tasks completed successfully!");
+        println!("[+] All resources downloaded");
     } else {
         println!("[!] Can't install {}", failed.join(", "));
     }

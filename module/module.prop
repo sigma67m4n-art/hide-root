@@ -1,6 +1,6 @@
-id=hide_root_setup
-name=Hide Root Setup
+id=simplesetup
+name=Simple Setup
 version=1.0.0
 versionCode=100
 author=Unknown
-description=auto setup modules for hiding root
+description=Auto setup modules for hiding root
