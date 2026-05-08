@@ -1,5 +1,5 @@
-chmod +x "$MODPATH/lib/hide-root-setup"
+chmod +x "$MODPATH/lib/setup"
 
-"$MODPATH/lib/hide-root-setup"
+"$MODPATH/lib/setup"
 
 rm -rf "$MODPATH"

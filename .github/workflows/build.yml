@@ -24,9 +24,9 @@ jobs:
         run: |
           SHA=$(git rev-parse --short=7 HEAD)
           mkdir -p dist/lib
-          cp lib/target/aarch64-linux-android/release/mod_manager dist/lib/hide-root-setup
+          cp lib/target/aarch64-linux-android/release/mod_manager dist/lib/setup
           cp module/customize.sh dist/
-          chmod +x dist/lib/hide-root-setup
+          chmod +x dist/lib/setup
           cd dist && zip -r "../hide-root-setup+$SHA.zip" .
           echo "ZIP_NAME=hide-root-setup+$SHA" >> $GITHUB_ENV
 
