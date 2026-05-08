@@ -33,7 +33,6 @@ fn main() {
 
     let mut failed = Vec::new();
     let client = reqwest::blocking::Client::builder()
-        .user_agent("Mozilla/5.0")
         .build()
         .unwrap();
 

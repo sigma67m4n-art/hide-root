@@ -25,10 +25,10 @@ jobs:
           cp lib/target/aarch64-linux-android/release/setup dist/lib/setup
           cp module/customize.sh dist/
           chmod +x dist/lib/setup
-          cd dist && zip -r "../hide-root-setup+$SHA.zip" .
-          echo "ZIP_NAME=hide-root-setup+$SHA" >> $GITHUB_ENV
+          echo "ARTIFACT_NAME=hide-root-setup+$SHA" >> $GITHUB_ENV
 
       - uses: actions/upload-artifact@v4
         with:
-          name: ${{ env.ZIP_NAME }}
-          path: "${{ env.ZIP_NAME }}.zip"
+          name: ${{ env.ARTIFACT_NAME }}
+          path: dist/
+          archive: false
