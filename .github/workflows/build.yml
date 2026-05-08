@@ -9,11 +9,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-
-      - name: Toolchain
-        uses: dtolnay/rust-toolchain@stable
+      - uses: actions-rust-lang/setup-rust-toolchain@v1
         with:
-          targets: aarch64-linux-android
+          target: aarch64-linux-android
 
       - name: Build
         run: |
@@ -24,7 +22,7 @@ jobs:
         run: |
           SHA=$(git rev-parse --short=7 HEAD)
           mkdir -p dist/lib
-          cp lib/target/aarch64-linux-android/release/mod_manager dist/lib/setup
+          cp lib/target/aarch64-linux-android/release/setup dist/lib/setup
           cp module/customize.sh dist/
           chmod +x dist/lib/setup
           cd dist && zip -r "../hide-root-setup+$SHA.zip" .
