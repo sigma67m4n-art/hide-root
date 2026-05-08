@@ -1,0 +1,36 @@
+name: Build Rust
+on:
+  push:
+    branches: [ "main" ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-linux-android
+
+      - name: Build
+        run: |
+          cargo install cross --git https://github.com/cross-rs/cross.git
+          cd lib && cross build --target aarch64-linux-android --release
+
+      - name: Package
+        run: |
+          SHA=$(git rev-parse --short=7 HEAD)
+          mkdir -p dist/lib
+          cp lib/target/aarch64-linux-android/release/mod_manager dist/lib/hide-root-setup
+          cp module/customize.sh dist/
+          chmod +x dist/lib/hide-root-setup
+          cd dist && zip -r "../hide-root-setup+$SHA.zip" .
+          echo "ZIP_NAME=hide-root-setup+$SHA" >> $GITHUB_ENV
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.ZIP_NAME }}
+          path: "${{ env.ZIP_NAME }}.zip"
